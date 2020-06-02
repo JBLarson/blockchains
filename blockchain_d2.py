@@ -6,6 +6,7 @@ from time import time
 from uuid import uuid4
 from urllib.parse import urlparse
 from flask import Flask, jsonify, request
+import requests
 
 class Blockchain(object):
 	def __init__(self):
@@ -71,7 +72,7 @@ class Blockchain(object):
 		block_string = json.dumps(block, sort_keys=True).encode()
 		return hashlib.sha256(block_string).hexdigest()
 
-
+		#static methods are functions that can be called by classes without self parameter
 	@staticmethod
 	def valid_proof(last_proof, proof):
 		"""
@@ -144,23 +145,19 @@ class Blockchain(object):
 		return True
 
 	def resolve_conflicts(self):
-
 		"""
-		This is our consensus algorithm, 
-		it resolves conflicts by replacing our chain
-		with the longest one in the network.
+		This is our Consensus Algorithm, it resolves conflicts
+		by replacing our chain with the longest one in the network.
 		:return: <bool> True if our chain was replaced, False if not
 		"""
 
 		neighbours = self.nodes
 		new_chain = None
 
-		#we're only looking for chains longer than ours
-
+		# We're only looking for chains longer than ours
 		max_length = len(self.chain)
 
-		#grab and verify the chains from all the nodes in our network
-
+		# Grab and verify the chains from all the nodes in our network
 		for node in neighbours:
 			response = requests.get(f'http://{node}/chain')
 
@@ -168,13 +165,12 @@ class Blockchain(object):
 				length = response.json()['length']
 				chain = response.json()['chain']
 
-				#check if the length is longer and the chain is valid
-
+				# Check if the length is longer and the chain is valid
 				if length > max_length and self.valid_chain(chain):
 					max_length = length
 					new_chain = chain
-		#replace our chain if we discovered a new, valid chain that's longer
 
+		# Replace our chain if we discovered a new, valid chain longer than ours
 		if new_chain:
 			self.chain = new_chain
 			return True
@@ -258,8 +254,6 @@ def full_chain():
 	return jsonify(response), 200
 
 
-if __name__ == '__main__':
-	app.run(host='0.0.0.0', port=5000)
 
 
 
@@ -302,3 +296,5 @@ def consensus():
 	return jsonify(response), 200
 
 
+if __name__ == '__main__':
+	app.run(host='0.0.0.0', port=5000)
